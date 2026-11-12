@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoreo de Actividad Física - Adultos Mayores</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Librería para descomprimir archivos .zip directamente en el navegador -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 0;">
+
+    <!-- Encabezado con Logo -->
+    <header style="display: flex; align-items: center; justify-content: space-between; padding: 15px 30px; background: #2c3e50; color: white;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <img src="logo.jpeg" alt="Logo Proyecto" style="height: 50px; width: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #ffffff;" onerror="this.src='logo.jpg';">
+            <div>
+                <h1 style="margin: 0; font-size: 19px;">Sistema Inteligente de Promoción de Actividad Física</h1>
+                <p style="margin: 0; font-size: 12px; color: #cbd5e1;">Análisis de Acelerometría y Machine Learning (Random Forest)</p>
+            </div>
+        </div>
+    </header>
+
+    <main style="max-width: 1000px; margin: 20px auto; padding: 0 20px;">
+        
+        <!-- Panel de Control: Subir archivo / Carpeta / Zip + Selector Demo -->
+        <section style="background: #ffffff; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            
+            <!-- Cargar archivos, carpetas o .ZIP -->
+            <div style="flex: 1; min-width: 250px;">
+                <label style="display: block; font-weight: bold; margin-bottom: 5px; color: #2c3e50; font-size: 14px;">📁 Cargar pacientes (archivos .json, .zip o carpeta):</label>
+                <input type="file" id="fileInput" accept=".json,.zip" multiple onchange="cargarArchivoManual(event)" style="width: 100%; padding: 6px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; background: #fafafa;">
+            </div>
+
+            <!-- Seleccionar de la lista precargada -->
+            <div style="flex: 1; min-width: 250px;">
+                <label for="selectPaciente" style="display: block; font-weight: bold; margin-bottom: 5px; color: #2c3e50; font-size: 14px;">⚡ Seleccionar Paciente Cargado (Demo):</label>
+                <select id="selectPaciente" onchange="cargarPacienteSeleccionado(this.value)" style="width: 100%; padding: 8px; font-size: 14px; border-radius: 4px; border: 1px solid #ccc; background: #fafafa;">
+                    <option value="">-- Elige un paciente --</option>
+                    <option value="d1p01M.json">Paciente d1p01M (Masculino)</option>
+                    <option value="d1p02F.json">Paciente d1p02F (Femenino)</option>
+                </select>
+            </div>
+
+        </section>
+
+        <!-- Tarjetas de Estadísticas -->
+        <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+            <div style="background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border: 1px solid #e2e8f0;">
+                <h3 style="margin: 0; color: #64748b; font-size: 12px; text-transform: uppercase;">ID Paciente</h3>
+                <p id="txtId" style="font-size: 20px; font-weight: bold; color: #2c3e50; margin: 5px 0 0 0;">-</p>
+            </div>
+            <div style="background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border: 1px solid #e2e8f0;">
+                <h3 style="margin: 0; color: #64748b; font-size: 12px; text-transform: uppercase;">Género</h3>
+                <p id="txtGenero" style="font-size: 20px; font-weight: bold; color: #2c3e50; margin: 5px 0 0 0;">-</p>
+            </div>
+            <div style="background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border: 1px solid #e2e8f0;">
+                <h3 style="margin: 0; color: #64748b; font-size: 12px; text-transform: uppercase;">Puntuación Total</h3>
+                <p id="txtScore" style="font-size: 20px; font-weight: bold; color: #27ae60; margin: 5px 0 0 0;">0 pts</p>
+            </div>
+            <div style="background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border: 1px solid #e2e8f0;">
+                <h3 style="margin: 0; color: #64748b; font-size: 12px; text-transform: uppercase;">Insignia Evaluada</h3>
+                <p id="txtBadge" style="font-size: 15px; font-weight: bold; color: #d35400; margin: 5px 0 0 0;">-</p>
+            </div>
+        </section>
+
+        <!-- Mensaje del Sistema -->
+        <section style="background: #e8f4fd; padding: 15px; border-left: 5px solid #2980b9; margin-bottom: 20px; border-radius: 4px;">
+            <h3 style="margin: 0 0 5px 0; color: #2980b9; font-size: 15px;">Mensaje del Sistema Inteligente</h3>
+            <p id="txtMensaje" style="margin: 0; color: #333; font-size: 14px;">Sube un archivo JSON, un ZIP o una carpeta completa para ver la evaluación.</p>
+        </section>
+
+        <!-- Desglose de Actividades -->
+        <section style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+            <h2 style="margin-top: 0; color: #2c3e50; font-size: 17px;">Desglose de Parámetros de Actividad</h2>
+            <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Parámetros evaluados: Sentado en la cama, Sentado en la silla, Acostado en la cama, y Deambulando (incluye estar de pie y caminar por la habitación).</p>
+            <div id="tablaDesglose" style="overflow-x: auto;">
+                <p style="color: #999; text-align: center; padding: 15px;">Esperando selección de datos...</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
